@@ -14,7 +14,8 @@ const INITIAL_NEW_EXPENSE: NewExpense = {
 const generateId = () => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 interface BillSplitterState {
-  // Persisted State
+  // Persisted State - 1 Trip with multiple Sessions
+  tripName: string;
   sessions: Session[];
   activeSessionId: string | null;
   
@@ -22,7 +23,10 @@ interface BillSplitterState {
   newExpense: NewExpense;
   isExpenseFormOpen: boolean;
 
-  // Session Actions
+  // Trip Actions (single trip)
+  setTripName: (name: string) => void;
+
+  // Session Actions (CRUD for sessions within the trip)
   createSession: (name?: string) => string;
   deleteSession: (id: string) => void;
   selectSession: (id: string | null) => void;
@@ -64,18 +68,22 @@ const updateActiveSession = (
 export const useBillSplitterStore = create<BillSplitterState>()(
   persist(
     (set, get) => ({
-      // Initial State
+      // Initial State - 1 fixed trip with empty sessions
+      tripName: 'ทริปกาญจนบุรี',
       sessions: [],
       activeSessionId: null,
       newExpense: INITIAL_NEW_EXPENSE,
       isExpenseFormOpen: false,
+
+      // Trip Actions
+      setTripName: (name) => set({ tripName: name }),
 
       // Session Actions
       createSession: (name) => {
         const id = generateId();
         const newSession: Session = {
           id,
-          name: name || `ทริปใหม่ ${get().sessions.length + 1}`,
+          name: name || `การหาร #${get().sessions.length + 1}`,
           createdAt: Date.now(),
           participants: [],
           expenses: []
@@ -269,9 +277,10 @@ export const useBillSplitterStore = create<BillSplitterState>()(
       },
     }),
     {
-      name: 'bill-splitter-storage-v2',
+      name: 'bill-splitter-storage-v3',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        tripName: state.tripName,
         sessions: state.sessions,
         activeSessionId: state.activeSessionId,
       }),

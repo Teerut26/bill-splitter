@@ -45,12 +45,25 @@ export interface Settlement {
 
 // --- Session Types ---
 
+/**
+ * Session = หนึ่งครั้งของการหารเงิน (เช่น มื้อเช้า, ค่าโรงแรม, ค่าแท็กซี่)
+ * แต่ละ session มี participants และ expenses ของตัวเอง
+ */
 export interface Session {
   id: string;
   name: string;
   createdAt: number;
   participants: Participant[];
   expenses: Expense[];
+}
+
+/**
+ * Trip = ทริปหลัก (มีแค่ 1 ทริป ไม่สามารถสร้างเพิ่ม)
+ * ประกอบด้วยหลาย sessions
+ */
+export interface Trip {
+  name: string;
+  sessions: Session[];
 }
 
 // --- View Types ---
