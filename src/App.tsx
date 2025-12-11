@@ -25,6 +25,7 @@ export default function EqualityApp() {
   const activeSessionId = useBillSplitterStore(state => state.activeSessionId);
   const newExpense = useBillSplitterStore(state => state.newExpense);
   const isExpenseFormOpen = useBillSplitterStore(state => state.isExpenseFormOpen);
+  const editingExpenseId = useBillSplitterStore(state => state.editingExpenseId);
 
   // Get actions from store
   const setTripName = useBillSplitterStore(state => state.setTripName);
@@ -43,6 +44,9 @@ export default function EqualityApp() {
   const updateNewExpense = useBillSplitterStore(state => state.updateNewExpense);
   const submitExpense = useBillSplitterStore(state => state.submitExpense);
   const removeExpense = useBillSplitterStore(state => state.removeExpense);
+  const startEditExpense = useBillSplitterStore(state => state.startEditExpense);
+  const updateExpense = useBillSplitterStore(state => state.updateExpense);
+  const cancelEditExpense = useBillSplitterStore(state => state.cancelEditExpense);
   const resetTrip = useBillSplitterStore(state => state.resetTrip);
   const exportTrip = useBillSplitterStore(state => state.exportTrip);
   const importTrip = useBillSplitterStore(state => state.importTrip);
@@ -106,6 +110,7 @@ export default function EqualityApp() {
                 expenses={activeSession.expenses}
                 newExpense={newExpense}
                 isExpenseFormOpen={isExpenseFormOpen}
+                editingExpenseId={editingExpenseId}
                 report={report}
                 onSetIsExpenseFormOpen={setIsExpenseFormOpen}
                 onToggleInvolvedInNewExpense={toggleInvolvedInNewExpense}
@@ -114,6 +119,9 @@ export default function EqualityApp() {
                 onUpdateNewExpense={updateNewExpense}
                 onSubmitExpense={submitExpense}
                 onRemoveExpense={removeExpense}
+                onStartEditExpense={startEditExpense}
+                onUpdateExpense={updateExpense}
+                onCancelEditExpense={cancelEditExpense}
               />
             )}
             

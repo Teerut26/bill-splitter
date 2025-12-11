@@ -1,4 +1,4 @@
-import { Plus, Trash2, DollarSign, X, Check, AlignJustify, Hash } from 'lucide-react';
+import { Plus, Trash2, DollarSign, X, Check, AlignJustify, Hash, Pencil } from 'lucide-react';
 import { Button, Card, Input } from './ui';
 import { formatMoney } from '../utils/formatMoney';
 import type { Participant, Expense, NewExpense, Report } from '../types';
@@ -8,6 +8,7 @@ interface ExpensesTabProps {
   expenses: Expense[];
   newExpense: NewExpense;
   isExpenseFormOpen: boolean;
+  editingExpenseId: number | null;
   report: Report;
   onSetIsExpenseFormOpen: (isOpen: boolean) => void;
   onToggleInvolvedInNewExpense: (id: number) => void;
@@ -16,6 +17,9 @@ interface ExpensesTabProps {
   onUpdateNewExpense: (updates: Partial<NewExpense>) => void;
   onSubmitExpense: (formatMoney: (amount: number) => string) => boolean;
   onRemoveExpense: (id: number) => void;
+  onStartEditExpense: (id: number) => void;
+  onUpdateExpense: (formatMoney: (amount: number) => string) => boolean;
+  onCancelEditExpense: () => void;
 }
 
 const ExpensesTab = ({
@@ -23,6 +27,7 @@ const ExpensesTab = ({
   expenses,
   newExpense,
   isExpenseFormOpen,
+  editingExpenseId,
   report,
   onSetIsExpenseFormOpen,
   onToggleInvolvedInNewExpense,
@@ -31,13 +36,30 @@ const ExpensesTab = ({
   onUpdateNewExpense,
   onSubmitExpense,
   onRemoveExpense,
+  onStartEditExpense,
+  onUpdateExpense,
+  onCancelEditExpense,
 }: ExpensesTabProps) => {
   const currentSplitSum = Object.values(newExpense.customSplits).reduce((a, b) => a + b, 0);
   const remainingToSplit = (parseFloat(newExpense.amount) || 0) - currentSplitSum;
   const isExactMode = newExpense.splitMode === 'exact';
 
+  const isEditMode = editingExpenseId !== null;
+
   const handleSubmit = () => {
-    onSubmitExpense(formatMoney);
+    if (isEditMode) {
+      onUpdateExpense(formatMoney);
+    } else {
+      onSubmitExpense(formatMoney);
+    }
+  };
+
+  const handleCancel = () => {
+    if (isEditMode) {
+      onCancelEditExpense();
+    } else {
+      onSetIsExpenseFormOpen(false);
+    }
   };
 
   return (
@@ -71,9 +93,11 @@ const ExpensesTab = ({
       ) : (
         <Card className="p-4 border-2 border-blue-100 animate-slideDown">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-slate-700">รายการใหม่</h3>
+            <h3 className="font-bold text-slate-700">
+              {isEditMode ? 'แก้ไขรายการ' : 'รายการใหม่'}
+            </h3>
             <button 
-              onClick={() => onSetIsExpenseFormOpen(false)} 
+              onClick={handleCancel} 
               className="text-slate-400 hover:text-slate-600"
             >
               <X size={20} />
@@ -228,7 +252,7 @@ const ExpensesTab = ({
             </div>
 
             <Button onClick={handleSubmit} className="w-full mt-2">
-              บันทึก
+              {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึก'}
             </Button>
           </div>
         </Card>
@@ -267,10 +291,16 @@ const ExpensesTab = ({
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-700">
                   {formatMoney(expense.amount)}
                 </span>
+                <button 
+                  onClick={() => onStartEditExpense(expense.id)}
+                  className="text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"
+                >
+                  <Pencil size={16} />
+                </button>
                 <button 
                   onClick={() => onRemoveExpense(expense.id)}
                   className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"

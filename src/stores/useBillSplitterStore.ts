@@ -23,6 +23,7 @@ interface BillSplitterState {
   // Non-persisted UI State
   newExpense: NewExpense;
   isExpenseFormOpen: boolean;
+  editingExpenseId: number | null;
 
   // Trip Actions (single trip)
   setTripName: (name: string) => void;
@@ -48,6 +49,9 @@ interface BillSplitterState {
   resetNewExpenseForm: () => void;
   submitExpense: (formatMoney: (amount: number) => string) => boolean;
   removeExpense: (id: number) => void;
+  startEditExpense: (id: number) => void;
+  updateExpense: (formatMoney: (amount: number) => string) => boolean;
+  cancelEditExpense: () => void;
 
   // Reset action
   resetTrip: () => void;
@@ -83,6 +87,7 @@ export const useBillSplitterStore = create<BillSplitterState>()(
       activeSessionId: null,
       newExpense: INITIAL_NEW_EXPENSE,
       isExpenseFormOpen: false,
+      editingExpenseId: null,
 
       // Trip Actions
       setTripName: (name) => set({ tripName: name }),
@@ -305,6 +310,82 @@ export const useBillSplitterStore = create<BillSplitterState>()(
             expenses: s.expenses.filter(e => e.id !== id)
           }))
         }));
+      },
+
+      startEditExpense: (id) => {
+        const activeSession = getActiveSession(get());
+        if (!activeSession) return;
+        
+        const expense = activeSession.expenses.find(e => e.id === id);
+        if (!expense) return;
+        
+        // Load expense data into form
+        set({
+          editingExpenseId: id,
+          isExpenseFormOpen: true,
+          newExpense: {
+            title: expense.title,
+            amount: String(expense.amount),
+            payerId: expense.payerId,
+            involvedIds: expense.involvedIds,
+            splitMode: expense.splitMode,
+            customSplits: expense.customSplits
+          }
+        });
+      },
+
+      updateExpense: (formatMoney) => {
+        const { editingExpenseId, newExpense } = get();
+        const activeSession = getActiveSession(get());
+        if (!activeSession || editingExpenseId === null) return false;
+        
+        if (!newExpense.title || !newExpense.amount || !newExpense.payerId) {
+          alert("กรุณากรอกชื่อรายการ, จำนวนเงิน, และคนจ่ายให้ครบถ้วนครับ");
+          return false;
+        }
+        
+        const amountVal = parseFloat(newExpense.amount);
+        const expenseData = { ...newExpense };
+
+        if (expenseData.splitMode === 'exact') {
+          const currentSum = Object.values(expenseData.customSplits).reduce((a, b) => a + b, 0);
+          if (Math.abs(currentSum - amountVal) > 0.05) {
+            alert(`ยอดรวมที่ระบุ (${formatMoney(currentSum)}) ไม่ตรงกับจำนวนเงินทั้งหมด (${formatMoney(amountVal)})`);
+            return false;
+          }
+        } else {
+          if (expenseData.involvedIds.length === 0) {
+            expenseData.involvedIds = activeSession.participants.map(p => p.id);
+          }
+        }
+
+        const updatedExpense: Expense = {
+          id: editingExpenseId,
+          title: expenseData.title,
+          amount: amountVal,
+          payerId: expenseData.payerId,
+          involvedIds: expenseData.splitMode === 'equal' ? expenseData.involvedIds : [],
+          splitMode: expenseData.splitMode,
+          customSplits: expenseData.splitMode === 'exact' ? expenseData.customSplits : {}
+        };
+
+        set(state => ({ 
+          sessions: updateActiveSession(state, (s) => ({
+            expenses: s.expenses.map(e => e.id === editingExpenseId ? updatedExpense : e)
+          })),
+          newExpense: INITIAL_NEW_EXPENSE,
+          isExpenseFormOpen: false,
+          editingExpenseId: null
+        }));
+        return true;
+      },
+
+      cancelEditExpense: () => {
+        set({
+          editingExpenseId: null,
+          isExpenseFormOpen: false,
+          newExpense: INITIAL_NEW_EXPENSE
+        });
       },
 
       resetTrip: () => {
