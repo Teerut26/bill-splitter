@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { 
   Header, 
   Navigation, 
@@ -6,36 +5,40 @@ import {
   ExpensesTab, 
   ReportTab 
 } from './components';
-import { useBillSplitter } from './hooks/useBillSplitter';
+import { 
+  useBillSplitterStore, 
+  useReport, 
+  useSettlements 
+} from './stores/useBillSplitterStore';
 import type { TabType } from './types';
+import { useState } from 'react';
 
 export default function EqualityApp() {
   const [activeTab, setActiveTab] = useState<TabType>('people');
-  const [eventName, setEventName] = useState('ทริปกาญจนบุรี');
 
-  const {
-    // State
-    participants,
-    expenses,
-    newExpense,
-    isExpenseFormOpen,
-    report,
-    settlements,
+  // Get state from store
+  const eventName = useBillSplitterStore(state => state.eventName);
+  const participants = useBillSplitterStore(state => state.participants);
+  const expenses = useBillSplitterStore(state => state.expenses);
+  const newExpense = useBillSplitterStore(state => state.newExpense);
+  const isExpenseFormOpen = useBillSplitterStore(state => state.isExpenseFormOpen);
 
-    // Participant actions
-    addParticipant,
-    updateParticipantName,
-    removeParticipant,
+  // Get actions from store
+  const setEventName = useBillSplitterStore(state => state.setEventName);
+  const addParticipant = useBillSplitterStore(state => state.addParticipant);
+  const updateParticipantName = useBillSplitterStore(state => state.updateParticipantName);
+  const removeParticipant = useBillSplitterStore(state => state.removeParticipant);
+  const setIsExpenseFormOpen = useBillSplitterStore(state => state.setIsExpenseFormOpen);
+  const toggleInvolvedInNewExpense = useBillSplitterStore(state => state.toggleInvolvedInNewExpense);
+  const selectAllInvolved = useBillSplitterStore(state => state.selectAllInvolved);
+  const handleCustomSplitChange = useBillSplitterStore(state => state.handleCustomSplitChange);
+  const updateNewExpense = useBillSplitterStore(state => state.updateNewExpense);
+  const submitExpense = useBillSplitterStore(state => state.submitExpense);
+  const removeExpense = useBillSplitterStore(state => state.removeExpense);
 
-    // Expense form actions
-    setIsExpenseFormOpen,
-    toggleInvolvedInNewExpense,
-    selectAllInvolved,
-    handleCustomSplitChange,
-    updateNewExpense,
-    submitExpense,
-    removeExpense,
-  } = useBillSplitter();
+  // Get computed values
+  const report = useReport();
+  const settlements = useSettlements();
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
