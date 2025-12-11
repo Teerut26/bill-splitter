@@ -10,6 +10,7 @@ import {
 import { 
   useBillSplitterStore, 
   useActiveSession,
+  useParticipantsFromOtherSessions,
   useReport, 
   useSettlements 
 } from './stores/useBillSplitterStore';
@@ -32,6 +33,7 @@ export default function EqualityApp() {
   const selectSession = useBillSplitterStore(state => state.selectSession);
   const updateSessionName = useBillSplitterStore(state => state.updateSessionName);
   const addParticipant = useBillSplitterStore(state => state.addParticipant);
+  const addExistingParticipant = useBillSplitterStore(state => state.addExistingParticipant);
   const updateParticipantName = useBillSplitterStore(state => state.updateParticipantName);
   const removeParticipant = useBillSplitterStore(state => state.removeParticipant);
   const setIsExpenseFormOpen = useBillSplitterStore(state => state.setIsExpenseFormOpen);
@@ -47,6 +49,7 @@ export default function EqualityApp() {
 
   // Get active session data
   const activeSession = useActiveSession();
+  const participantsFromOtherSessions = useParticipantsFromOtherSessions();
   const report = useReport();
   const settlements = useSettlements();
 
@@ -88,7 +91,9 @@ export default function EqualityApp() {
             {activeTab === 'people' && (
               <PeopleTab
                 participants={activeSession.participants}
+                participantsFromOtherSessions={participantsFromOtherSessions}
                 onAddParticipant={addParticipant}
+                onAddExistingParticipant={addExistingParticipant}
                 onUpdateParticipantName={updateParticipantName}
                 onRemoveParticipant={removeParticipant}
                 onTabChange={setActiveTab}

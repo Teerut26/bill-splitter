@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Expense, NewExpense, Report, Settlement, Session } from '../types';
+import type { Expense, NewExpense, Report, Settlement, Session, Participant } from '../types';
 import { exportTripToJson, importTripFromJson, openImportDialog } from '../utils/importExport';
 
 const INITIAL_NEW_EXPENSE: NewExpense = {
@@ -35,6 +35,7 @@ interface BillSplitterState {
   
   // Participant actions (scoped to active session)
   addParticipant: () => void;
+  addExistingParticipant: (participant: Participant) => void;
   updateParticipantName: (id: number, name: string) => void;
   removeParticipant: (id: number) => boolean;
 
@@ -136,6 +137,28 @@ export const useBillSplitterStore = create<BillSplitterState>()(
         set(state => ({
           sessions: updateActiveSession(state, (s) => ({
             participants: [...s.participants, { id: newId, name: `เพื่อนคนที่ ${newId}` }]
+          }))
+        }));
+      },
+
+      addExistingParticipant: (participant) => {
+        const activeSession = getActiveSession(get());
+        if (!activeSession) return;
+        
+        // Check if participant already exists in this session (by name)
+        if (activeSession.participants.some(p => p.name === participant.name)) {
+          alert(`"${participant.name}" มีอยู่ใน session นี้แล้ว`);
+          return;
+        }
+        
+        // Generate new ID for this session
+        const newId = activeSession.participants.length > 0 
+          ? Math.max(...activeSession.participants.map(p => p.id)) + 1 
+          : 1;
+        
+        set(state => ({
+          sessions: updateActiveSession(state, (s) => ({
+            participants: [...s.participants, { id: newId, name: participant.name }]
           }))
         }));
       },
@@ -340,6 +363,32 @@ export const useActiveSession = (): Session | undefined => {
   const sessions = useBillSplitterStore(state => state.sessions);
   const activeSessionId = useBillSplitterStore(state => state.activeSessionId);
   return sessions.find(s => s.id === activeSessionId);
+};
+
+/**
+ * Get unique participants from other sessions that are not in the current session
+ */
+export const useParticipantsFromOtherSessions = (): Participant[] => {
+  const sessions = useBillSplitterStore(state => state.sessions);
+  const activeSessionId = useBillSplitterStore(state => state.activeSessionId);
+  const activeSession = sessions.find(s => s.id === activeSessionId);
+  const currentNames = new Set(activeSession?.participants.map(p => p.name) || []);
+  
+  // Collect all unique participants from other sessions
+  const participantMap = new Map<string, Participant>();
+  
+  sessions
+    .filter(s => s.id !== activeSessionId)
+    .forEach(session => {
+      session.participants.forEach(p => {
+        // Only add if not already in current session and not already added
+        if (!currentNames.has(p.name) && !participantMap.has(p.name)) {
+          participantMap.set(p.name, p);
+        }
+      });
+    });
+  
+  return Array.from(participantMap.values());
 };
 
 export const useReport = (): Report => {
