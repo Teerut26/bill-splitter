@@ -43,4 +43,17 @@ export interface Settlement {
   amount: number;
 }
 
+// --- Session Types ---
+
+export interface Session {
+  id: string;
+  name: string;
+  createdAt: number;
+  participants: Participant[];
+  expenses: Expense[];
+}
+
+// --- View Types ---
+
 export type TabType = 'people' | 'expenses' | 'report';
+export type ViewType = 'sessions' | 'session-detail';

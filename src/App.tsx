@@ -1,30 +1,34 @@
+import { useState, useEffect } from 'react';
 import { 
   Header, 
   Navigation, 
   PeopleTab, 
   ExpensesTab, 
-  ReportTab 
+  ReportTab,
+  SessionList
 } from './components';
 import { 
   useBillSplitterStore, 
+  useActiveSession,
   useReport, 
   useSettlements 
 } from './stores/useBillSplitterStore';
 import type { TabType } from './types';
-import { useState } from 'react';
 
 export default function EqualityApp() {
   const [activeTab, setActiveTab] = useState<TabType>('people');
 
   // Get state from store
-  const eventName = useBillSplitterStore(state => state.eventName);
-  const participants = useBillSplitterStore(state => state.participants);
-  const expenses = useBillSplitterStore(state => state.expenses);
+  const sessions = useBillSplitterStore(state => state.sessions);
+  const activeSessionId = useBillSplitterStore(state => state.activeSessionId);
   const newExpense = useBillSplitterStore(state => state.newExpense);
   const isExpenseFormOpen = useBillSplitterStore(state => state.isExpenseFormOpen);
 
   // Get actions from store
-  const setEventName = useBillSplitterStore(state => state.setEventName);
+  const createSession = useBillSplitterStore(state => state.createSession);
+  const deleteSession = useBillSplitterStore(state => state.deleteSession);
+  const selectSession = useBillSplitterStore(state => state.selectSession);
+  const updateSessionName = useBillSplitterStore(state => state.updateSessionName);
   const addParticipant = useBillSplitterStore(state => state.addParticipant);
   const updateParticipantName = useBillSplitterStore(state => state.updateParticipantName);
   const removeParticipant = useBillSplitterStore(state => state.removeParticipant);
@@ -36,58 +40,85 @@ export default function EqualityApp() {
   const submitExpense = useBillSplitterStore(state => state.submitExpense);
   const removeExpense = useBillSplitterStore(state => state.removeExpense);
 
-  // Get computed values
+  // Get active session data
+  const activeSession = useActiveSession();
   const report = useReport();
   const settlements = useSettlements();
+
+  // Reset to people tab when switching sessions
+  useEffect(() => {
+    setActiveTab('people');
+  }, [activeSessionId]);
+
+  const handleBackToSessions = () => {
+    selectSession(null);
+  };
+
+  const isInSession = activeSessionId !== null && activeSession !== undefined;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
       <Header 
-        eventName={eventName} 
-        onEventNameChange={setEventName} 
+        eventName={isInSession ? activeSession.name : undefined}
+        onEventNameChange={isInSession ? updateSessionName : undefined}
+        showBackButton={isInSession}
+        onBack={handleBackToSessions}
       />
 
       <main className="max-w-xl mx-auto px-4 py-6">
-        {activeTab === 'people' && (
-          <PeopleTab
-            participants={participants}
-            onAddParticipant={addParticipant}
-            onUpdateParticipantName={updateParticipantName}
-            onRemoveParticipant={removeParticipant}
-            onTabChange={setActiveTab}
+        {!isInSession ? (
+          <SessionList
+            sessions={sessions}
+            onCreateSession={() => createSession()}
+            onSelectSession={selectSession}
+            onDeleteSession={deleteSession}
           />
-        )}
-        
-        {activeTab === 'expenses' && (
-          <ExpensesTab
-            participants={participants}
-            expenses={expenses}
-            newExpense={newExpense}
-            isExpenseFormOpen={isExpenseFormOpen}
-            report={report}
-            onSetIsExpenseFormOpen={setIsExpenseFormOpen}
-            onToggleInvolvedInNewExpense={toggleInvolvedInNewExpense}
-            onSelectAllInvolved={selectAllInvolved}
-            onHandleCustomSplitChange={handleCustomSplitChange}
-            onUpdateNewExpense={updateNewExpense}
-            onSubmitExpense={submitExpense}
-            onRemoveExpense={removeExpense}
-          />
-        )}
-        
-        {activeTab === 'report' && (
-          <ReportTab
-            participants={participants}
-            report={report}
-            settlements={settlements}
-          />
+        ) : (
+          <>
+            {activeTab === 'people' && (
+              <PeopleTab
+                participants={activeSession.participants}
+                onAddParticipant={addParticipant}
+                onUpdateParticipantName={updateParticipantName}
+                onRemoveParticipant={removeParticipant}
+                onTabChange={setActiveTab}
+              />
+            )}
+            
+            {activeTab === 'expenses' && (
+              <ExpensesTab
+                participants={activeSession.participants}
+                expenses={activeSession.expenses}
+                newExpense={newExpense}
+                isExpenseFormOpen={isExpenseFormOpen}
+                report={report}
+                onSetIsExpenseFormOpen={setIsExpenseFormOpen}
+                onToggleInvolvedInNewExpense={toggleInvolvedInNewExpense}
+                onSelectAllInvolved={selectAllInvolved}
+                onHandleCustomSplitChange={handleCustomSplitChange}
+                onUpdateNewExpense={updateNewExpense}
+                onSubmitExpense={submitExpense}
+                onRemoveExpense={removeExpense}
+              />
+            )}
+            
+            {activeTab === 'report' && (
+              <ReportTab
+                participants={activeSession.participants}
+                report={report}
+                settlements={settlements}
+              />
+            )}
+          </>
         )}
       </main>
 
-      <Navigation 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-      />
+      {isInSession && (
+        <Navigation 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+      )}
 
       {/* Styles for animations */}
       <style>{`

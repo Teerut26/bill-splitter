@@ -3,4 +3,6 @@ export { default as Navigation } from './Navigation';
 export { default as PeopleTab } from './PeopleTab';
 export { default as ExpensesTab } from './ExpensesTab';
 export { default as ReportTab } from './ReportTab';
+export { default as SessionList } from './SessionList';
+export { default as SessionCard } from './SessionCard';
 export * from './ui';

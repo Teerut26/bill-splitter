@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Participant, Expense, NewExpense, Report, Settlement } from '../types';
+import type { Participant, Expense, NewExpense, Report, Settlement, Session } from '../types';
 
 const INITIAL_NEW_EXPENSE: NewExpense = {
   title: '',
@@ -11,25 +11,29 @@ const INITIAL_NEW_EXPENSE: NewExpense = {
   customSplits: {}
 };
 
+const generateId = () => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
 interface BillSplitterState {
   // Persisted State
-  eventName: string;
-  participants: Participant[];
-  expenses: Expense[];
+  sessions: Session[];
+  activeSessionId: string | null;
   
   // Non-persisted UI State
   newExpense: NewExpense;
   isExpenseFormOpen: boolean;
 
-  // Actions
-  setEventName: (name: string) => void;
+  // Session Actions
+  createSession: (name?: string) => string;
+  deleteSession: (id: string) => void;
+  selectSession: (id: string | null) => void;
+  updateSessionName: (name: string) => void;
   
-  // Participant actions
+  // Participant actions (scoped to active session)
   addParticipant: () => void;
   updateParticipantName: (id: number, name: string) => void;
   removeParticipant: (id: number) => boolean;
 
-  // Expense form actions
+  // Expense form actions (scoped to active session)
   setIsExpenseFormOpen: (isOpen: boolean) => void;
   toggleInvolvedInNewExpense: (id: number) => void;
   selectAllInvolved: () => void;
@@ -38,58 +42,117 @@ interface BillSplitterState {
   resetNewExpenseForm: () => void;
   submitExpense: (formatMoney: (amount: number) => string) => boolean;
   removeExpense: (id: number) => void;
-
-  // Reset action
-  resetAll: () => void;
 }
+
+// Helper to get active session
+const getActiveSession = (state: BillSplitterState): Session | undefined => {
+  return state.sessions.find(s => s.id === state.activeSessionId);
+};
+
+// Helper to update active session
+const updateActiveSession = (
+  state: BillSplitterState, 
+  updater: (session: Session) => Partial<Session>
+): Session[] => {
+  return state.sessions.map(s => 
+    s.id === state.activeSessionId 
+      ? { ...s, ...updater(s) } 
+      : s
+  );
+};
 
 export const useBillSplitterStore = create<BillSplitterState>()(
   persist(
     (set, get) => ({
       // Initial State
-      eventName: 'ทริปกาญจนบุรี',
-      participants: [
-        { id: 1, name: 'อลิซ' },
-        { id: 2, name: 'บ๊อบ' },
-        { id: 3, name: 'ชาลี' }
-      ],
-      expenses: [],
+      sessions: [],
+      activeSessionId: null,
       newExpense: INITIAL_NEW_EXPENSE,
       isExpenseFormOpen: false,
 
-      // Actions
-      setEventName: (name) => set({ eventName: name }),
+      // Session Actions
+      createSession: (name) => {
+        const id = generateId();
+        const newSession: Session = {
+          id,
+          name: name || `ทริปใหม่ ${get().sessions.length + 1}`,
+          createdAt: Date.now(),
+          participants: [],
+          expenses: []
+        };
+        set(state => ({ 
+          sessions: [...state.sessions, newSession],
+          activeSessionId: id 
+        }));
+        return id;
+      },
 
-      addParticipant: () => {
-        const { participants } = get();
-        const newId = participants.length > 0 
-          ? Math.max(...participants.map(p => p.id)) + 1 
-          : 1;
+      deleteSession: (id) => {
+        set(state => ({
+          sessions: state.sessions.filter(s => s.id !== id),
+          activeSessionId: state.activeSessionId === id ? null : state.activeSessionId
+        }));
+      },
+
+      selectSession: (id) => {
         set({ 
-          participants: [...participants, { id: newId, name: `เพื่อนคนที่ ${newId}` }] 
+          activeSessionId: id,
+          newExpense: INITIAL_NEW_EXPENSE,
+          isExpenseFormOpen: false
         });
+      },
+
+      updateSessionName: (name) => {
+        set(state => ({
+          sessions: updateActiveSession(state, () => ({ name }))
+        }));
+      },
+
+      // Participant Actions (scoped to active session)
+      addParticipant: () => {
+        const activeSession = getActiveSession(get());
+        if (!activeSession) return;
+        
+        const newId = activeSession.participants.length > 0 
+          ? Math.max(...activeSession.participants.map(p => p.id)) + 1 
+          : 1;
+        
+        set(state => ({
+          sessions: updateActiveSession(state, (s) => ({
+            participants: [...s.participants, { id: newId, name: `เพื่อนคนที่ ${newId}` }]
+          }))
+        }));
       },
 
       updateParticipantName: (id, name) => {
-        const { participants } = get();
-        set({ 
-          participants: participants.map(p => p.id === id ? { ...p, name } : p) 
-        });
+        set(state => ({
+          sessions: updateActiveSession(state, (s) => ({
+            participants: s.participants.map(p => p.id === id ? { ...p, name } : p)
+          }))
+        }));
       },
 
       removeParticipant: (id) => {
-        const { participants, expenses } = get();
-        if (expenses.some(e => 
+        const activeSession = getActiveSession(get());
+        if (!activeSession) return false;
+        
+        if (activeSession.expenses.some(e => 
           e.payerId === String(id) || 
           (e.involvedIds && e.involvedIds.includes(id)) || 
           (e.customSplits && e.customSplits[id] > 0)
         )) {
           return false;
         }
-        set({ participants: participants.filter(p => p.id !== id) });
+        
+        set(state => ({
+          sessions: updateActiveSession(state, (s) => ({
+            participants: s.participants.filter(p => p.id !== id)
+          }))
+        }));
         return true;
       },
 
+      // Expense Form Actions
       setIsExpenseFormOpen: (isOpen) => set({ isExpenseFormOpen: isOpen }),
 
       toggleInvolvedInNewExpense: (id) => {
@@ -113,11 +176,14 @@ export const useBillSplitterStore = create<BillSplitterState>()(
       },
 
       selectAllInvolved: () => {
-        const { newExpense, participants } = get();
+        const activeSession = getActiveSession(get());
+        if (!activeSession) return;
+        
+        const { newExpense } = get();
         set({ 
           newExpense: { 
             ...newExpense, 
-            involvedIds: participants.map(p => p.id) 
+            involvedIds: activeSession.participants.map(p => p.id) 
           } 
         });
       },
@@ -149,7 +215,10 @@ export const useBillSplitterStore = create<BillSplitterState>()(
       },
 
       submitExpense: (formatMoney) => {
-        const { newExpense, expenses, participants } = get();
+        const activeSession = getActiveSession(get());
+        if (!activeSession) return false;
+        
+        const { newExpense } = get();
         
         if (!newExpense.title || !newExpense.amount || !newExpense.payerId) {
           alert("กรุณากรอกชื่อรายการ, จำนวนเงิน, และคนจ่ายให้ครบถ้วนครับ");
@@ -159,7 +228,6 @@ export const useBillSplitterStore = create<BillSplitterState>()(
         const amountVal = parseFloat(newExpense.amount);
         const expenseData = { ...newExpense };
 
-        // Validation for Unequal Split
         if (expenseData.splitMode === 'exact') {
           const currentSum = Object.values(expenseData.customSplits).reduce((a, b) => a + b, 0);
           if (Math.abs(currentSum - amountVal) > 0.05) {
@@ -168,7 +236,7 @@ export const useBillSplitterStore = create<BillSplitterState>()(
           }
         } else {
           if (expenseData.involvedIds.length === 0) {
-            expenseData.involvedIds = participants.map(p => p.id);
+            expenseData.involvedIds = activeSession.participants.map(p => p.id);
           }
         }
 
@@ -182,49 +250,49 @@ export const useBillSplitterStore = create<BillSplitterState>()(
           customSplits: expenseData.splitMode === 'exact' ? expenseData.customSplits : {}
         };
 
-        set({ 
-          expenses: [...expenses, expense],
+        set(state => ({ 
+          sessions: updateActiveSession(state, (s) => ({
+            expenses: [...s.expenses, expense]
+          })),
           newExpense: INITIAL_NEW_EXPENSE,
           isExpenseFormOpen: false
-        });
+        }));
         return true;
       },
 
       removeExpense: (id) => {
-        const { expenses } = get();
-        set({ expenses: expenses.filter(e => e.id !== id) });
+        set(state => ({
+          sessions: updateActiveSession(state, (s) => ({
+            expenses: s.expenses.filter(e => e.id !== id)
+          }))
+        }));
       },
-
-      resetAll: () => {
-        set({
-          eventName: 'ทริปใหม่',
-          participants: [],
-          expenses: [],
-          newExpense: INITIAL_NEW_EXPENSE,
-          isExpenseFormOpen: false
-        });
-      }
     }),
     {
-      name: 'bill-splitter-storage',
+      name: 'bill-splitter-storage-v2',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        eventName: state.eventName,
-        participants: state.participants,
-        expenses: state.expenses,
+        sessions: state.sessions,
+        activeSessionId: state.activeSessionId,
       }),
     }
   )
 );
 
 // Selector hooks for computed values
+export const useActiveSession = (): Session | undefined => {
+  const sessions = useBillSplitterStore(state => state.sessions);
+  const activeSessionId = useBillSplitterStore(state => state.activeSessionId);
+  return sessions.find(s => s.id === activeSessionId);
+};
+
 export const useReport = (): Report => {
-  const participants = useBillSplitterStore(state => state.participants);
-  const expenses = useBillSplitterStore(state => state.expenses);
+  const activeSession = useActiveSession();
+  const participants = activeSession?.participants || [];
+  const expenses = activeSession?.expenses || [];
 
   const stats: Report['stats'] = {};
   
-  // Initialize
   participants.forEach(p => {
     stats[p.id] = { 
       id: p.id, 
@@ -241,13 +309,11 @@ export const useReport = (): Report => {
     const amount = e.amount;
     totalTripCost += amount;
 
-    // Add to payer's paid total
     const payerId = parseInt(e.payerId);
     if (stats[payerId]) {
       stats[payerId].paid += amount;
     }
 
-    // Calculate Split
     if (e.splitMode === 'exact' && e.customSplits) {
       Object.entries(e.customSplits).forEach(([pid, splitVal]) => {
         const numPid = parseInt(pid);
@@ -268,7 +334,6 @@ export const useReport = (): Report => {
     }
   });
 
-  // Calculate Net
   Object.values(stats).forEach(person => {
     person.net = person.paid - person.share;
   });
