@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Expense, NewExpense, Report, Settlement, Session } from '../types';
+import { exportTripToJson, importTripFromJson, openImportDialog } from '../utils/importExport';
 
 const INITIAL_NEW_EXPENSE: NewExpense = {
   title: '',
@@ -49,6 +50,10 @@ interface BillSplitterState {
 
   // Reset action
   resetTrip: () => void;
+
+  // Import/Export actions
+  exportTrip: () => void;
+  importTrip: () => Promise<void>;
 }
 
 // Helper to get active session
@@ -288,6 +293,33 @@ export const useBillSplitterStore = create<BillSplitterState>()(
             newExpense: INITIAL_NEW_EXPENSE,
             isExpenseFormOpen: false
           });
+        }
+      },
+
+      exportTrip: () => {
+        const { tripName, sessions } = get();
+        exportTripToJson(tripName, sessions);
+      },
+
+      importTrip: async () => {
+        const file = await openImportDialog();
+        if (!file) return;
+
+        try {
+          const data = await importTripFromJson(file);
+          
+          if (confirm(`ต้องการนำเข้าข้อมูลจาก "${data.tripName}" หรือไม่? ข้อมูลปัจจุบันจะถูกแทนที่`)) {
+            set({
+              tripName: data.tripName,
+              sessions: data.sessions,
+              activeSessionId: null,
+              newExpense: INITIAL_NEW_EXPENSE,
+              isExpenseFormOpen: false
+            });
+            alert('นำเข้าข้อมูลสำเร็จ!');
+          }
+        } catch (error) {
+          alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
         }
       },
     }),

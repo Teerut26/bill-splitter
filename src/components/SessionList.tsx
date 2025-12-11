@@ -1,4 +1,4 @@
-import { Plus, Users, DollarSign, Layers, RotateCcw } from 'lucide-react';
+import { Plus, Users, DollarSign, Layers, RotateCcw, Download, Upload } from 'lucide-react';
 import { Button, Input } from './ui';
 import SessionCard from './SessionCard';
 import type { Session } from '../types';
@@ -11,6 +11,8 @@ interface SessionListProps {
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
   onResetTrip: () => void;
+  onExportTrip: () => void;
+  onImportTrip: () => void;
 }
 
 const SessionList = ({
@@ -21,6 +23,8 @@ const SessionList = ({
   onSelectSession,
   onDeleteSession,
   onResetTrip,
+  onExportTrip,
+  onImportTrip,
 }: SessionListProps) => {
   const sortedSessions = [...sessions].sort((a, b) => b.createdAt - a.createdAt);
   const totalAmount = sessions.reduce(
@@ -45,7 +49,7 @@ const SessionList = ({
             />
           </div>
         </div>
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-2 text-sm flex-wrap">
           <div className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
             <Layers size={14} />
             <span>{sessions.length} การหาร</span>
@@ -54,13 +58,29 @@ const SessionList = ({
             <DollarSign size={14} />
             <span>รวม ฿{totalAmount.toLocaleString()}</span>
           </div>
-          <button
-            onClick={onResetTrip}
-            className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors ml-auto"
-          >
-            <RotateCcw size={14} />
-            <span>รีเซ็ต</span>
-          </button>
+          <div className="flex gap-2 ml-auto">
+            <button
+              onClick={onExportTrip}
+              className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors"
+              title="ส่งออก"
+            >
+              <Download size={14} />
+            </button>
+            <button
+              onClick={onImportTrip}
+              className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors"
+              title="นำเข้า"
+            >
+              <Upload size={14} />
+            </button>
+            <button
+              onClick={onResetTrip}
+              className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors"
+              title="รีเซ็ต"
+            >
+              <RotateCcw size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
