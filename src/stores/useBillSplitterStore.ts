@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Participant, Expense, NewExpense, Report, Settlement, Session } from '../types';
+import type { Expense, NewExpense, Report, Settlement, Session } from '../types';
 
 const INITIAL_NEW_EXPENSE: NewExpense = {
   title: '',
@@ -46,6 +46,9 @@ interface BillSplitterState {
   resetNewExpenseForm: () => void;
   submitExpense: (formatMoney: (amount: number) => string) => boolean;
   removeExpense: (id: number) => void;
+
+  // Reset action
+  resetTrip: () => void;
 }
 
 // Helper to get active session
@@ -274,6 +277,18 @@ export const useBillSplitterStore = create<BillSplitterState>()(
             expenses: s.expenses.filter(e => e.id !== id)
           }))
         }));
+      },
+
+      resetTrip: () => {
+        if (confirm('ต้องการรีเซ็ตทริปหรือไม่? ข้อมูลทั้งหมดจะถูกลบ')) {
+          set({
+            tripName: 'ทริปใหม่',
+            sessions: [],
+            activeSessionId: null,
+            newExpense: INITIAL_NEW_EXPENSE,
+            isExpenseFormOpen: false
+          });
+        }
       },
     }),
     {

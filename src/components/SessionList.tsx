@@ -1,4 +1,4 @@
-import { Plus, Users, DollarSign, Layers } from 'lucide-react';
+import { Plus, Users, DollarSign, Layers, RotateCcw } from 'lucide-react';
 import { Button, Input } from './ui';
 import SessionCard from './SessionCard';
 import type { Session } from '../types';
@@ -10,6 +10,7 @@ interface SessionListProps {
   onCreateSession: () => void;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
+  onResetTrip: () => void;
 }
 
 const SessionList = ({
@@ -19,6 +20,7 @@ const SessionList = ({
   onCreateSession,
   onSelectSession,
   onDeleteSession,
+  onResetTrip,
 }: SessionListProps) => {
   const sortedSessions = [...sessions].sort((a, b) => b.createdAt - a.createdAt);
   const totalAmount = sessions.reduce(
@@ -52,6 +54,13 @@ const SessionList = ({
             <DollarSign size={14} />
             <span>รวม ฿{totalAmount.toLocaleString()}</span>
           </div>
+          <button
+            onClick={onResetTrip}
+            className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors ml-auto"
+          >
+            <RotateCcw size={14} />
+            <span>รีเซ็ต</span>
+          </button>
         </div>
       </div>
 

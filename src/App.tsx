@@ -41,6 +41,7 @@ export default function EqualityApp() {
   const updateNewExpense = useBillSplitterStore(state => state.updateNewExpense);
   const submitExpense = useBillSplitterStore(state => state.submitExpense);
   const removeExpense = useBillSplitterStore(state => state.removeExpense);
+  const resetTrip = useBillSplitterStore(state => state.resetTrip);
 
   // Get active session data
   const activeSession = useActiveSession();
@@ -76,6 +77,7 @@ export default function EqualityApp() {
             onCreateSession={() => createSession()}
             onSelectSession={selectSession}
             onDeleteSession={deleteSession}
+            onResetTrip={resetTrip}
           />
         ) : (
           <>
