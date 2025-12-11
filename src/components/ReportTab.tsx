@@ -1,4 +1,4 @@
-import { PieChart, RefreshCw, Check, ArrowRight } from 'lucide-react';
+import { PieChart, RefreshCw, Check, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import { Card } from './ui';
 import { formatMoney } from '../utils/formatMoney';
 import type { Participant, Report, Settlement } from '../types';
@@ -7,9 +7,16 @@ interface ReportTabProps {
   participants: Participant[];
   report: Report;
   settlements: Settlement[];
+  paidSettlements: string[];
+  onTogglePaid: (settlementKey: string) => void;
 }
 
-const ReportTab = ({ participants, report, settlements }: ReportTabProps) => (
+// Helper to create a unique key for a settlement
+const getSettlementKey = (settlement: Settlement): string => {
+  return `${settlement.from}->${settlement.to}->${settlement.amount.toFixed(2)}`;
+};
+
+const ReportTab = ({ participants, report, settlements, paidSettlements, onTogglePaid }: ReportTabProps) => (
   <div className="space-y-8 animate-fadeIn">
     
     {/* Balances Card */}
@@ -70,27 +77,53 @@ const ReportTab = ({ participants, report, settlements }: ReportTabProps) => (
         </div>
       ) : (
         <div className="grid gap-3">
-          {settlements.map((move, idx) => (
-            <div 
-              key={idx} 
-              className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col">
-                  <span className="font-bold text-red-500">{move.from}</span>
-                  <span className="text-xs text-slate-400">จ่ายให้</span>
+          {settlements.map((move, idx) => {
+            const settlementKey = getSettlementKey(move);
+            const isPaid = paidSettlements.includes(settlementKey);
+            
+            return (
+              <div 
+                key={idx} 
+                className={`bg-white p-4 rounded-xl shadow-sm border-l-4 flex items-center justify-between transition-all duration-200 ${
+                  isPaid 
+                    ? 'border-emerald-500 bg-emerald-50/50 opacity-75' 
+                    : 'border-blue-500'
+                }`}
+              >
+                <button
+                  onClick={() => onTogglePaid(settlementKey)}
+                  className={`flex-shrink-0 mr-3 p-1 rounded-full transition-all duration-200 hover:scale-110 ${
+                    isPaid 
+                      ? 'text-emerald-500 hover:text-emerald-600' 
+                      : 'text-slate-300 hover:text-blue-500'
+                  }`}
+                  title={isPaid ? 'คลิกเพื่อยกเลิก' : 'คลิกเพื่อทำเครื่องหมายว่าจ่ายแล้ว'}
+                >
+                  {isPaid ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                </button>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex flex-col min-w-0">
+                    <span className={`font-bold truncate ${isPaid ? 'text-slate-500 line-through' : 'text-red-500'}`}>
+                      {move.from}
+                    </span>
+                    <span className="text-xs text-slate-400">จ่ายให้</span>
+                  </div>
+                  <ArrowRight size={16} className={isPaid ? 'text-slate-300' : 'text-slate-300'} />
+                  <div className="flex flex-col text-right sm:text-left min-w-0">
+                    <span className={`font-bold truncate ${isPaid ? 'text-slate-500 line-through' : 'text-emerald-600'}`}>
+                      {move.to}
+                    </span>
+                    <span className="text-xs text-slate-400">รับเงินจาก</span>
+                  </div>
                 </div>
-                <ArrowRight size={16} className="text-slate-300" />
-                <div className="flex flex-col text-right sm:text-left">
-                  <span className="font-bold text-emerald-600">{move.to}</span>
-                  <span className="text-xs text-slate-400">รับเงินจาก</span>
+                <div className={`font-mono font-bold text-lg ml-3 ${
+                  isPaid ? 'text-slate-400 line-through' : 'text-slate-700'
+                }`}>
+                  {formatMoney(move.amount)}
                 </div>
               </div>
-              <div className="font-mono font-bold text-lg text-slate-700">
-                {formatMoney(move.amount)}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

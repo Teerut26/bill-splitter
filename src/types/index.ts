@@ -55,6 +55,7 @@ export interface Session {
   createdAt: number;
   participants: Participant[];
   expenses: Expense[];
+  paidSettlements: string[]; // Array of settlement keys: "from->to->amount"
 }
 
 /**

@@ -12,7 +12,8 @@ import {
   useActiveSession,
   useParticipantsFromOtherSessions,
   useReport, 
-  useSettlements 
+  useSettlements,
+  usePaidSettlements 
 } from './stores/useBillSplitterStore';
 import type { TabType } from './types';
 
@@ -50,12 +51,14 @@ export default function EqualityApp() {
   const resetTrip = useBillSplitterStore(state => state.resetTrip);
   const exportTrip = useBillSplitterStore(state => state.exportTrip);
   const importTrip = useBillSplitterStore(state => state.importTrip);
+  const toggleSettlementPaid = useBillSplitterStore(state => state.toggleSettlementPaid);
 
   // Get active session data
   const activeSession = useActiveSession();
   const participantsFromOtherSessions = useParticipantsFromOtherSessions();
   const report = useReport();
   const settlements = useSettlements();
+  const paidSettlements = usePaidSettlements();
 
   // Reset to people tab when switching sessions
   useEffect(() => {
@@ -130,6 +133,8 @@ export default function EqualityApp() {
                 participants={activeSession.participants}
                 report={report}
                 settlements={settlements}
+                paidSettlements={paidSettlements}
+                onTogglePaid={toggleSettlementPaid}
               />
             )}
           </>

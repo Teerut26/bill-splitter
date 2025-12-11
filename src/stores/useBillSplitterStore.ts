@@ -39,6 +39,7 @@ interface BillSplitterState {
   addExistingParticipant: (participant: Participant) => void;
   updateParticipantName: (id: number, name: string) => void;
   removeParticipant: (id: number) => boolean;
+  toggleSettlementPaid: (settlementKey: string) => void;
 
   // Expense form actions (scoped to active session)
   setIsExpenseFormOpen: (isOpen: boolean) => void;
@@ -100,7 +101,8 @@ export const useBillSplitterStore = create<BillSplitterState>()(
           name: name || `การหาร #${get().sessions.length + 1}`,
           createdAt: Date.now(),
           participants: [],
-          expenses: []
+          expenses: [],
+          paidSettlements: []
         };
         set(state => ({ 
           sessions: [...state.sessions, newSession],
@@ -413,9 +415,14 @@ export const useBillSplitterStore = create<BillSplitterState>()(
           const data = await importTripFromJson(file);
           
           if (confirm(`ต้องการนำเข้าข้อมูลจาก "${data.tripName}" หรือไม่? ข้อมูลปัจจุบันจะถูกแทนที่`)) {
+            // Ensure all sessions have paidSettlements array
+            const sessionsWithPaidSettlements = data.sessions.map(s => ({
+              ...s,
+              paidSettlements: s.paidSettlements || []
+            }));
             set({
               tripName: data.tripName,
-              sessions: data.sessions,
+              sessions: sessionsWithPaidSettlements,
               activeSessionId: null,
               newExpense: INITIAL_NEW_EXPENSE,
               isExpenseFormOpen: false
@@ -425,6 +432,19 @@ export const useBillSplitterStore = create<BillSplitterState>()(
         } catch (error) {
           alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
         }
+      },
+
+      toggleSettlementPaid: (settlementKey) => {
+        set(state => ({
+          sessions: updateActiveSession(state, (s) => {
+            const currentPaid = s.paidSettlements || [];
+            if (currentPaid.includes(settlementKey)) {
+              return { paidSettlements: currentPaid.filter(k => k !== settlementKey) };
+            } else {
+              return { paidSettlements: [...currentPaid, settlementKey] };
+            }
+          })
+        }));
       },
     }),
     {
@@ -568,4 +588,9 @@ export const useSettlements = (): Settlement[] => {
   }
 
   return moves;
+};
+
+export const usePaidSettlements = (): string[] => {
+  const activeSession = useActiveSession();
+  return activeSession?.paidSettlements || [];
 };

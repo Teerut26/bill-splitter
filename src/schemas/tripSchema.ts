@@ -23,6 +23,7 @@ export const SessionSchema = z.object({
   createdAt: z.number(),
   participants: z.array(ParticipantSchema),
   expenses: z.array(ExpenseSchema),
+  paidSettlements: z.array(z.string()).optional().default([]),
 });
 
 export const TripExportSchema = z.object({
