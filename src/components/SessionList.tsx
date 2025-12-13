@@ -1,5 +1,6 @@
-import { Plus, Users, DollarSign, Layers, RotateCcw, Download, Upload } from 'lucide-react';
+import { Plus, Users, DollarSign, Layers, RotateCcw, Download, Upload, RefreshCw } from 'lucide-react';
 import { Button, Input } from './ui';
+import { usePWAUpdate } from './PWAUpdatePrompt';
 import SessionCard from './SessionCard';
 import type { Session } from '../types';
 
@@ -26,6 +27,7 @@ const SessionList = ({
   onExportTrip,
   onImportTrip,
 }: SessionListProps) => {
+  const { needRefresh, isUpdating, checkAndUpdate } = usePWAUpdate();
   const sortedSessions = [...sessions].sort((a, b) => b.createdAt - a.createdAt);
   const totalAmount = sessions.reduce(
     (sum, s) => sum + s.expenses.reduce((eSum, e) => eSum + e.amount, 0),
@@ -79,6 +81,19 @@ const SessionList = ({
               title="รีเซ็ต"
             >
               <RotateCcw size={14} />
+            </button>
+            <button
+              onClick={checkAndUpdate}
+              disabled={isUpdating}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors ${
+                needRefresh 
+                  ? 'bg-green-400/30 hover:bg-green-400/40 ring-1 ring-green-300' 
+                  : 'bg-white/10 hover:bg-white/20'
+              } ${isUpdating ? 'opacity-50' : ''}`}
+              title={needRefresh ? 'มีเวอร์ชันใหม่!' : 'ตรวจสอบอัปเดต'}
+            >
+              <RefreshCw size={14} className={isUpdating ? 'animate-spin' : ''} />
+              {needRefresh && <span className="text-xs">ใหม่!</span>}
             </button>
           </div>
         </div>
