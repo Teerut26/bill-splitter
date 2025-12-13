@@ -15,9 +15,9 @@ export default defineConfig({
     },
 
     manifest: {
-      name: 'bill-splitter',
-      short_name: 'bill-splitter',
-      description: 'bill-splitter',
+      name: 'Bill Splitter',
+      short_name: 'Bill Splitter',
+      description: 'Bill Splitter',
       theme_color: '#ffffff',
     },
 
