@@ -30,10 +30,10 @@ const ReportTab = ({ participants, report, settlements, paidSettlements, onToggl
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
             <tr>
-              <th className="px-6 py-3">ชื่อ</th>
-              <th className="px-6 py-3 text-right">จ่ายไป</th>
-              <th className="px-6 py-3 text-right">ส่วนที่ต้องออก</th>
-              <th className="px-6 py-3 text-right">สุทธิ</th>
+              <th className="px-6 py-3 whitespace-nowrap">ชื่อ</th>
+              <th className="px-6 py-3 text-right whitespace-nowrap">จ่ายไป</th>
+              <th className="px-6 py-3 text-right whitespace-nowrap">ส่วนที่ต้องออก</th>
+              <th className="px-6 py-3 text-right whitespace-nowrap">สุทธิ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -43,14 +43,14 @@ const ReportTab = ({ participants, report, settlements, paidSettlements, onToggl
               const isNegative = stat.net < 0;
               return (
                 <tr key={p.id} className="hover:bg-slate-50/50">
-                  <td className="px-6 py-4 font-medium text-slate-700">{p.name}</td>
-                  <td className="px-6 py-4 text-right text-slate-500">
+                  <td className="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">{p.name}</td>
+                  <td className="px-6 py-4 text-right text-slate-500 whitespace-nowrap">
                     {formatMoney(stat.paid)}
                   </td>
-                  <td className="px-6 py-4 text-right text-slate-500">
+                  <td className="px-6 py-4 text-right text-slate-500 whitespace-nowrap">
                     {formatMoney(stat.share)}
                   </td>
-                  <td className={`px-6 py-4 text-right font-bold ${
+                  <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${
                     isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'
                   }`}>
                     {stat.net > 0 ? '+' : ''}{formatMoney(stat.net)}
@@ -113,7 +113,7 @@ const ReportTab = ({ participants, report, settlements, paidSettlements, onToggl
                     <span className={`font-bold truncate ${isPaid ? 'text-slate-500 line-through' : 'text-emerald-600'}`}>
                       {move.to}
                     </span>
-                    <span className="text-xs text-slate-400">รับเงินจาก</span>
+                    <span className="text-xs text-slate-400">รับเงิน</span>
                   </div>
                 </div>
                 <div className={`font-mono font-bold text-lg ml-3 ${
