@@ -5,4 +5,5 @@ export { default as ExpensesTab } from './ExpensesTab';
 export { default as ReportTab } from './ReportTab';
 export { default as SessionList } from './SessionList';
 export { default as SessionCard } from './SessionCard';
+export { PWAUpdatePrompt } from './PWAUpdatePrompt';
 export * from './ui';

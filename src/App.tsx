@@ -5,7 +5,8 @@ import {
   PeopleTab, 
   ExpensesTab, 
   ReportTab,
-  SessionList
+  SessionList,
+  PWAUpdatePrompt
 } from './components';
 import { 
   useBillSplitterStore, 
@@ -156,6 +157,9 @@ export default function EqualityApp() {
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
         .animate-slideDown { animation: slideDown 0.2s ease-out; }
       `}</style>
+
+      {/* PWA Update Prompt */}
+      <PWAUpdatePrompt />
     </div>
   );
 }
