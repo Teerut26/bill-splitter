@@ -303,13 +303,13 @@ const ExpensesTab = ({
                 </span>
                 <button 
                   onClick={() => onStartEditExpense(expense.id)}
-                  className="text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"
+                  className="text-slate-400 hover:text-blue-500 transition-all"
                 >
                   <Pencil size={16} />
                 </button>
                 <button 
                   onClick={() => handleRemoveExpense(expense)}
-                  className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  className="text-slate-400 hover:text-red-500 transition-all"
                 >
                   <Trash2 size={16} />
                 </button>
