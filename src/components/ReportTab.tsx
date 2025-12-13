@@ -1,4 +1,4 @@
-import { PieChart, RefreshCw, Check, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { PieChart, RefreshCw, Check, ArrowRight, CheckCircle2, Circle, Crown, TrendingUp } from 'lucide-react';
 import { Card } from './ui';
 import { formatMoney } from '../utils/formatMoney';
 import type { Participant, Report, Settlement } from '../types';
@@ -16,8 +16,80 @@ const getSettlementKey = (settlement: Settlement): string => {
   return `${settlement.from}->${settlement.to}->${settlement.amount.toFixed(2)}`;
 };
 
-const ReportTab = ({ participants, report, settlements, paidSettlements, onTogglePaid }: ReportTabProps) => (
+// Get top spenders sorted by their share (actual consumption after splitting)
+const getTopSpenders = (participants: Participant[], report: Report) => {
+  return participants
+    .map(p => ({
+      ...p,
+      share: report.stats[p.id]?.share || 0
+    }))
+    .filter(p => p.share > 0)
+    .sort((a, b) => b.share - a.share);
+};
+
+const ReportTab = ({ participants, report, settlements, paidSettlements, onTogglePaid }: ReportTabProps) => {
+  const topSpenders = getTopSpenders(participants, report);
+  const maxShare = topSpenders[0]?.share || 0;
+
+  return (
   <div className="space-y-8 animate-fadeIn">
+
+    {/* Top Spenders Card */}
+    {topSpenders.length > 0 && (
+      <Card className="p-0 overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100">
+          <h3 className="font-bold text-amber-700 flex items-center gap-2">
+            <TrendingUp size={18} /> ใช้จ่ายเยอะสุดในทริป
+          </h3>
+        </div>
+        <div className="p-4 space-y-3">
+          {topSpenders.map((spender, index) => {
+            const percentage = maxShare > 0 ? (spender.share / maxShare) * 100 : 0;
+            const isTop = index === 0;
+            
+            return (
+              <div 
+                key={spender.id} 
+                className={`relative rounded-xl p-4 transition-all ${
+                  isTop 
+                    ? 'bg-gradient-to-r from-amber-100 to-orange-100 border-2 border-amber-300' 
+                    : 'bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-lg font-bold ${
+                      isTop ? 'text-amber-600' : 'text-slate-400'
+                    }`}>
+                      #{index + 1}
+                    </span>
+                    {isTop && <Crown size={20} className="text-amber-500" />}
+                    <span className={`font-bold ${isTop ? 'text-amber-800' : 'text-slate-700'}`}>
+                      {spender.name}
+                    </span>
+                  </div>
+                  <span className={`font-mono font-bold text-lg ${
+                    isTop ? 'text-amber-700' : 'text-slate-600'
+                  }`}>
+                    {formatMoney(spender.share)}
+                  </span>
+                </div>
+                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isTop 
+                        ? 'bg-gradient-to-r from-amber-400 to-orange-400' 
+                        : 'bg-slate-400'
+                    }`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    )}
     
     {/* Balances Card */}
     <Card className="p-0">
@@ -128,6 +200,7 @@ const ReportTab = ({ participants, report, settlements, paidSettlements, onToggl
       )}
     </div>
   </div>
-);
+  );
+};
 
 export default ReportTab;
