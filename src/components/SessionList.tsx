@@ -2,6 +2,8 @@ import { Plus, Users, DollarSign, Layers, RotateCcw, Download, Upload, RefreshCw
 import { Button, Input } from './ui';
 import { usePWAUpdate } from './PWAUpdatePrompt';
 import SessionCard from './SessionCard';
+import TripSummaryCard from './TripSummaryCard';
+import { useTripReport } from '../stores/useBillSplitterStore';
 import type { Session } from '../types';
 
 interface SessionListProps {
@@ -28,6 +30,7 @@ const SessionList = ({
   onImportTrip,
 }: SessionListProps) => {
   const { needRefresh, isUpdating, checkAndUpdate } = usePWAUpdate();
+  const tripReport = useTripReport();
   const sortedSessions = [...sessions].sort((a, b) => b.createdAt - a.createdAt);
   const totalAmount = sessions.reduce(
     (sum, s) => sum + s.expenses.reduce((eSum, e) => eSum + e.amount, 0),
@@ -98,6 +101,14 @@ const SessionList = ({
           </div>
         </div>
       </div>
+
+      {/* Trip Summary - Top Spenders */}
+      {sessions.length > 0 && tripReport.participantStats.length > 0 && (
+        <TripSummaryCard 
+          participantStats={tripReport.participantStats}
+          totalTripCost={tripReport.totalTripCost}
+        />
+      )}
 
       {/* Create New Session Button */}
       <Button 

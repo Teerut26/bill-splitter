@@ -594,3 +594,88 @@ export const usePaidSettlements = (): string[] => {
   const activeSession = useActiveSession();
   return activeSession?.paidSettlements || [];
 };
+
+interface TripParticipantStats {
+  name: string;
+  totalPaid: number;
+  totalShare: number;
+  net: number;
+}
+
+interface TripReport {
+  participantStats: TripParticipantStats[];
+  totalTripCost: number;
+}
+
+/**
+ * Hook to calculate spending statistics across ALL sessions
+ * Aggregates participants by name and calculates their total paid/share/net
+ */
+export const useTripReport = (): TripReport => {
+  const sessions = useBillSplitterStore(state => state.sessions);
+
+  // Aggregate stats by participant name (since same person can be in multiple sessions)
+  const statsMap = new Map<string, TripParticipantStats>();
+  let totalTripCost = 0;
+
+  sessions.forEach(session => {
+    const { participants, expenses } = session;
+    
+    // Create a map of participant id -> name for this session
+    const idToName = new Map<number, string>();
+    participants.forEach(p => {
+      idToName.set(p.id, p.name);
+      // Initialize in statsMap if not exists
+      if (!statsMap.has(p.name)) {
+        statsMap.set(p.name, { name: p.name, totalPaid: 0, totalShare: 0, net: 0 });
+      }
+    });
+
+    // Process each expense in this session
+    expenses.forEach(expense => {
+      const amount = expense.amount;
+      totalTripCost += amount;
+
+      // Track who paid
+      const payerId = parseInt(expense.payerId);
+      const payerName = idToName.get(payerId);
+      if (payerName) {
+        const stats = statsMap.get(payerName)!;
+        stats.totalPaid += amount;
+      }
+
+      // Track shares
+      if (expense.splitMode === 'exact' && expense.customSplits) {
+        Object.entries(expense.customSplits).forEach(([pid, splitVal]) => {
+          const participantName = idToName.get(parseInt(pid));
+          if (participantName) {
+            const stats = statsMap.get(participantName)!;
+            stats.totalShare += splitVal;
+          }
+        });
+      } else {
+        const splitAmong = (expense.involvedIds && expense.involvedIds.length > 0) 
+          ? expense.involvedIds 
+          : participants.map(p => p.id);
+        const splitAmount = amount / splitAmong.length;
+        splitAmong.forEach(pid => {
+          const participantName = idToName.get(pid);
+          if (participantName) {
+            const stats = statsMap.get(participantName)!;
+            stats.totalShare += splitAmount;
+          }
+        });
+      }
+    });
+  });
+
+  // Calculate net for all participants
+  statsMap.forEach(stats => {
+    stats.net = stats.totalPaid - stats.totalShare;
+  });
+
+  return {
+    participantStats: Array.from(statsMap.values()),
+    totalTripCost
+  };
+};
