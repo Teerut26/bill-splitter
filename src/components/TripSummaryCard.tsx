@@ -23,7 +23,7 @@ const getTopSpenders = (stats: TripParticipantStats[]) => {
 };
 
 const TripSummaryCard = ({ participantStats, totalTripCost }: TripSummaryCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const topSpenders = getTopSpenders(participantStats);
   const maxShare = topSpenders[0]?.totalShare || 0;
 
